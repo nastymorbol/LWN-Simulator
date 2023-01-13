@@ -54,25 +54,21 @@ func (d *Device) CreateUplink() [][]byte {
 
 		} else {
 			mtype = d.Info.Status.MType
-			var buffer, _ = d.Info.Status.Payload.MarshalBinary()
-
-			if len(buffer) > 1 && buffer[0] == '0' && buffer[1] == 'x' {
-				src := buffer[2:] //[]byte("010203AABBFF")
-				dst := make([]byte, hex.DecodedLen(len(src)))
-				_, err := hex.Decode(dst, src)
-				if err != nil {
-					log.Fatal(err)
-				}
-				//fmt.Printf("%s\n", dst[:n])
-				payload = &lorawan.DataPayload{Bytes: dst}
-			} else {
-				payload = d.Info.Status.Payload
-			}
-
+			payload = d.Info.Status.Payload
 		}
-
 		d.Info.Status.LastMType = mtype
+	}
 
+	var buffer, _ = payload.MarshalBinary()
+	if len(buffer) > 1 && buffer[0] == '0' && buffer[1] == 'x' {
+		src := buffer[2:] //[]byte("010203AABBFF")
+		dst := make([]byte, hex.DecodedLen(len(src)))
+		_, err := hex.Decode(dst, src)
+		if err != nil {
+			log.Fatal(err)
+		}
+		//fmt.Printf("%s\n", dst[:n])
+		payload = &lorawan.DataPayload{Bytes: dst}
 	}
 
 	m, n := d.Info.Configuration.Region.GetPayloadSize(d.Info.Status.DataRate, d.Info.Status.DataUplink.DwellTime)
