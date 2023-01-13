@@ -53,12 +53,12 @@ public class LwnConnectionService
     private readonly ILogger _logger;
     private readonly LwnConnection _connection;
     private readonly HttpClient _httpClient;
+    private readonly SocketIO _socketIo;
     private readonly JsonSerializerOptions _jsonOptions = new ()
     {
         PropertyNameCaseInsensitive = true
     };
 
-    private readonly SocketIO _socketIo;
 
 
     public LwnConnectionService(ILogger<LwnConnectionService> logger, IOptions<LwnConnection> options, IHttpClientFactory factory)
@@ -120,6 +120,18 @@ public class LwnConnectionService
 
         return devices;
     }
+    
+    public async Task StopSimulatorAsync(CancellationToken cancellationToken)
+    {
+        var response = await _httpClient
+            .GetStringAsync("stop",cancellationToken: cancellationToken);
+    }
+
+    public async Task StartSimulatorAsync(CancellationToken cancellationToken)
+    {
+        var response = await _httpClient
+            .GetStringAsync("start",cancellationToken: cancellationToken);
+    }
 
     class CustomJsonSerializer : SystemTextJsonSerializer
     {
@@ -137,11 +149,20 @@ public class LwnConnectionService
         }
     }
     
+    
+    public async Task SendPayloadAsync(int id, string payload, CancellationToken cancellationToken)
+    {
+        // 42["send-uplink",{"id":0,"mtype":"ConfirmedDataUp","payload":"0xffff01630400c1"}]	1673651564.2782326
+        if(_socketIo.Disconnected)
+            await _socketIo.ConnectAsync();
+        await _socketIo.EmitAsync(Events.EventSendUplink, cancellationToken, new NewPayload(){ Id = id, MType = "ConfirmedDataUp", Payload = payload});
+        
+    }
     public async Task ChangePayloadAsync(int id, string payload, CancellationToken cancellationToken)
     {
         if(_socketIo.Disconnected)
             await _socketIo.ConnectAsync();
-        await _socketIo.EmitAsync(Events.EventChangePayload, cancellationToken, new NewPayload(){ Id = id, MType = "ConfirmedDataUp", Payload = "0x1234"});
+        await _socketIo.EmitAsync(Events.EventChangePayload, cancellationToken, new NewPayload(){ Id = id, MType = "ConfirmedDataUp", Payload = payload});
     }
 }
 
@@ -161,13 +182,22 @@ public class LwnSimulator : BackgroundService
         _logger.LogInformation("Start lwn-client");
         while (!stoppingToken.IsCancellationRequested)
         {
-            Thread.Sleep(1000);
+            Thread.Sleep(10_000);
             var devices = await _lwnConnectionService.GetDevicesAsync(stoppingToken);
             var sensusDevices = devices.Where(d =>
                 d.info.name.StartsWith("sensus", StringComparison.InvariantCultureIgnoreCase));
             foreach (var deviceResponse in sensusDevices)
             {
-                await _lwnConnectionService.ChangePayloadAsync(deviceResponse.id, "0x121212", stoppingToken);
+                // avg temp
+                // await _lwnConnectionService.ChangePayloadAsync(deviceResponse.id, "0xffff01630400c1", stoppingToken);
+                // await Task.Delay(30_000, stoppingToken);
+                // door open
+                await _lwnConnectionService.ChangePayloadAsync(deviceResponse.id, "0xffff01630900110000", stoppingToken);
+                await Task.Delay(30_000, stoppingToken);
+                // door closed
+                await _lwnConnectionService.ChangePayloadAsync(deviceResponse.id, "0xffff01630901110000", stoppingToken);
+                await Task.Delay(30_000, stoppingToken);
+                
             }
         }
     }
