@@ -65,7 +65,7 @@ func (d *Device) CreateUplink() [][]byte {
 					log.Fatal(err)
 				}
 				fmt.Printf("%s\n", dst[:n])
-				payload = &lorawan.DataPayload{dst}
+				payload = &lorawan.DataPayload{Bytes: dst}
 			} else {
 				payload = d.Info.Status.Payload
 			}
