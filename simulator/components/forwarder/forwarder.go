@@ -24,7 +24,7 @@ func createPacket(info pkt.RXPK) pkt.RXPK {
 
 	tnow := time.Now()
 	offset, _ := time.Parse(time.RFC3339, "1980-01-06T00:00:00Z")
-	tmms := tnow.Unix() - offset.Unix()
+	tmms := tnow.UnixMilli() - offset.UnixMilli()
 
 	rxpk := pkt.RXPK{
 
