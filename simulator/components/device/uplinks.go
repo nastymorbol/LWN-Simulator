@@ -1,6 +1,10 @@
 package device
 
 import (
+	"encoding/hex"
+	"fmt"
+	"log"
+
 	"github.com/arslab/lwnsimulator/simulator/components/device/classes"
 	up "github.com/arslab/lwnsimulator/simulator/components/device/frames/uplink"
 	"github.com/arslab/lwnsimulator/simulator/util"
@@ -51,7 +55,21 @@ func (d *Device) CreateUplink() [][]byte {
 
 		} else {
 			mtype = d.Info.Status.MType
-			payload = d.Info.Status.Payload
+			var buffer, _ = d.Info.Status.Payload.MarshalBinary()
+
+			if len(buffer) > 1 && buffer[0] == '0' && buffer[1] == 'x' {
+				src := buffer[2:] //[]byte("010203AABBFF")
+				dst := make([]byte, hex.DecodedLen(len(src)))
+				n, err := hex.Decode(dst, src)
+				if err != nil {
+					log.Fatal(err)
+				}
+				fmt.Printf("%s\n", dst[:n])
+				payload = &lorawan.DataPayload{dst}
+			} else {
+				payload = d.Info.Status.Payload
+			}
+
 		}
 
 		d.Info.Status.LastMType = mtype
