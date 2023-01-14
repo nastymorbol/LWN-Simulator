@@ -13,6 +13,7 @@ public class Events {
 	public const string EventResponseCommand    = "response-command";
 	public const string EventChangePayload      = "change-payload";
 	public const string EventSendUplink         = "send-uplink";
+	public const string EventReceivedDownlink   = "rec-down";
 	public const string EventChangeLocation     = "change-location";
 	public const string EventGetParameters      = "get-regional-parameters";
 }

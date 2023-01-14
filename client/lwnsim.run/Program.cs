@@ -35,13 +35,14 @@ var app = Host.CreateDefaultBuilder(args)
     })
     .Build();
 
-
 app.Run();
 
 
 public class LwnConnection
 {
+#pragma warning disable CS8618
     public string Connection { get; set; }
+#pragma warning restore CS8618
 
     public Uri ApiUrl => new UriBuilder(Connection + "/api/").Uri;
     public Uri WsHttpUrl => new UriBuilder(Connection + "/socket.io/").Uri;
@@ -74,40 +75,32 @@ public class LwnConnectionService
         _socketIo.JsonSerializer = new CustomJsonSerializer(3);
         _socketIo.On( Events.EventDev, response =>
         {
-            _logger.LogInformation(response.ToString());
-
-            var text = response.GetValue<ConsoleLog>();
-
-            // The socket.io server code looks like this:
-            // socket.emit('hi', 'hi client');
+            _logger.LogInformation("[{Channel}] {Response}", Events.EventDev, response);
         });
 
         _socketIo.On(Events.EventLog, response =>
         {
-            // You can print the returned data first to decide what to do next.
-            // output: ["ok",{"id":1,"name":"tom"}]
-            _logger.LogInformation(response.ToString());
-    
-            // Get the first data in the response
-            var text = response.GetValue<ConsoleLog>();
+            _logger.LogInformation("[{Channel}] {Response}", Events.EventLog, response);
         });
         
         _socketIo.On(Events.EventResponseCommand, response =>
         {
-            // You can print the returned data first to decide what to do next.
-            // output: ["ok",{"id":1,"name":"tom"}]
-            _logger.LogInformation(response.ToString());
-            // 42["response-command","Sensus Simulation: Payload changed"]
-            var s = response.GetValue<string>();
+            _logger.LogInformation("[{Channel}] {Response}", Events.EventResponseCommand, response);
+        });
+        
+        _socketIo.On(Events.EventReceivedDownlink, response =>
+        {
+            _logger.LogInformation("[{Channel}] {Response}", Events.EventResponseCommand, response);
+            var downlink = response.GetValue<ReceiveDownlink>();
         });
 
         _socketIo.OnConnected += async (sender, e) =>
         {
-            _logger.LogInformation("Socket.IO Connects {arg}", e);
+            _logger.LogInformation("Socket.IO Connected");
         };
         _socketIo.OnDisconnected += async (sender, e) =>
         {
-            _logger.LogInformation("Socket.IO Connects {arg}", e);
+            _logger.LogInformation("Socket.IO Disconnected");
         };
         
     }
@@ -183,19 +176,29 @@ public class LwnSimulator : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             Thread.Sleep(10_000);
+            try
+            {
+                await _lwnConnectionService.StartSimulatorAsync(stoppingToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Error while starting simulation: {Message}", e.Message);
+                continue;
+            }
+            
             var devices = await _lwnConnectionService.GetDevicesAsync(stoppingToken);
             var sensusDevices = devices.Where(d =>
-                d.info.name.StartsWith("sensus", StringComparison.InvariantCultureIgnoreCase));
+                d.info.name.StartsWith("sensative", StringComparison.InvariantCultureIgnoreCase));
             foreach (var deviceResponse in sensusDevices)
             {
                 // avg temp
                 // await _lwnConnectionService.ChangePayloadAsync(deviceResponse.id, "0xffff01630400c1", stoppingToken);
                 // await Task.Delay(30_000, stoppingToken);
                 // door open
-                await _lwnConnectionService.ChangePayloadAsync(deviceResponse.id, "0xffff01630900110000", stoppingToken);
-                await Task.Delay(30_000, stoppingToken);
+                //await _lwnConnectionService.SendPayloadAsync(deviceResponse.id, "0xffff01630900110000", stoppingToken);
+                //await Task.Delay(30_000, stoppingToken);
                 // door closed
-                await _lwnConnectionService.ChangePayloadAsync(deviceResponse.id, "0xffff01630901110000", stoppingToken);
+                await _lwnConnectionService.SendPayloadAsync(deviceResponse.id, "0xffff01630901110000", stoppingToken);
                 await Task.Delay(30_000, stoppingToken);
                 
             }
