@@ -1,6 +1,8 @@
 package device
 
 import (
+	"fmt"
+
 	"github.com/arslab/lwnsimulator/simulator/util"
 
 	act "github.com/arslab/lwnsimulator/simulator/components/device/activation"
@@ -34,6 +36,10 @@ func (d *Device) ProcessDownlink(phy lorawan.PHYPayload) (*dl.InformationDownlin
 		if err != nil {
 			return nil, err
 		}
+		if payload.DataPayload != nil {
+			var sx16 string = fmt.Sprintf("0x%x", payload.DataPayload)
+			d.Print("Downlink Received: "+sx16, nil, util.PrintBoth)
+		}
 
 	case lorawan.ConfirmedDataDown: //ack
 
@@ -44,7 +50,10 @@ func (d *Device) ProcessDownlink(phy lorawan.PHYPayload) (*dl.InformationDownlin
 		}
 
 		d.SendAck()
-
+		if payload.DataPayload != nil {
+			var sx16 string = fmt.Sprintf("0x%x", payload.DataPayload)
+			d.Print("Downlink Received: "+sx16, nil, util.PrintBoth)
+		}
 	}
 
 	d.Info.Status.FCntDown = (d.Info.Status.FCntDown + 1) % util.MAXFCNTGAP
