@@ -1,8 +1,6 @@
 package device
 
 import (
-	"fmt"
-
 	"github.com/arslab/lwnsimulator/simulator/util"
 
 	act "github.com/arslab/lwnsimulator/simulator/components/device/activation"
@@ -15,6 +13,7 @@ func (d *Device) ProcessDownlink(phy lorawan.PHYPayload) (*dl.InformationDownlin
 
 	var payload *dl.InformationDownlink
 	var err error
+	var fcnt uint32
 
 	mtype := phy.MHDR.MType
 	err = nil
@@ -26,37 +25,30 @@ func (d *Device) ProcessDownlink(phy lorawan.PHYPayload) (*dl.InformationDownlin
 		if err != nil {
 			return nil, err
 		}
-
+		d.Info.Status.FCntDown = 0
 		return d.ProcessJoinAccept(Ja)
 
-	case lorawan.UnconfirmedDataDown:
+	case lorawan.UnconfirmedDataDown, lorawan.ConfirmedDataDown:
 
-		payload, err = dl.GetDownlink(phy, d.Info.Configuration.DisableFCntDown, d.Info.Status.FCntDown,
+		payload, fcnt, err = dl.GetDownlink(phy, d.Info.Configuration.DisableFCntDown, d.Info.Status.FCntDown,
 			d.Info.NwkSKey, d.Info.AppSKey)
+
 		if err != nil {
-			return nil, err
+			//d.Print("Downlink Error: ", err, util.PrintBoth)
+			//return nil, err
+			d.Info.Status.FCntDown = fcnt
 		}
+
+		d.Info.Status.FCntDown = (d.Info.Status.FCntDown + 1) % util.MAXFCNTGAP
+
+		if mtype == lorawan.ConfirmedDataDown {
+			d.SendAck()
+		}
+
 		if payload.DataPayload != nil {
-			var sx16 string = fmt.Sprintf("0x%x", payload.DataPayload)
-			d.Print("Downlink Received: "+sx16, nil, util.PrintBoth)
-		}
-
-	case lorawan.ConfirmedDataDown: //ack
-
-		payload, err = dl.GetDownlink(phy, d.Info.Configuration.DisableFCntDown, d.Info.Status.FCntDown,
-			d.Info.NwkSKey, d.Info.AppSKey)
-		if err != nil {
-			return nil, err
-		}
-
-		d.SendAck()
-		if payload.DataPayload != nil {
-			var sx16 string = fmt.Sprintf("0x%x", payload.DataPayload)
-			d.Print("Downlink Received: "+sx16, nil, util.PrintBoth)
+			d.PrintDownlink(payload.FPort, payload.DataPayload)
 		}
 	}
-
-	d.Info.Status.FCntDown = (d.Info.Status.FCntDown + 1) % util.MAXFCNTGAP
 
 	switch d.Class.GetClass() {
 

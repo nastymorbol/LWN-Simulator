@@ -158,10 +158,8 @@ func (d *Device) ProcessJoinAccept(JoinAccPayload *lorawan.JoinAcceptPayload) (*
 
 					index := j + i*16
 					d.Info.Configuration.Channels[index].EnableUplink = enable
-
 				}
 			}
-
 		}
 	}
 

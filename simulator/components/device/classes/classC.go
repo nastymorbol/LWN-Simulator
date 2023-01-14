@@ -19,7 +19,7 @@ const (
 	Exit
 )
 
-//TypeC mode
+// TypeC mode
 type TypeC struct {
 	Info      *models.InformationDevice
 	Supported bool `json:"supported"`
@@ -177,7 +177,7 @@ func (c *TypeC) RX2() {
 		phy := c.Info.ReceivedDownlink.Pull()
 		if phy != nil { //response
 
-			downlink, err := dl.GetDownlink(*phy, c.Info.Configuration.DisableFCntDown, c.Info.Status.FCntDown,
+			downlink, _, err := dl.GetDownlink(*phy, c.Info.Configuration.DisableFCntDown, c.Info.Status.FCntDown,
 				c.Info.NwkSKey, c.Info.AppSKey)
 			if err != nil {
 				continue

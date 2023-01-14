@@ -149,7 +149,6 @@ func (d *Device) FPendingProcedure(downlink *dl.InformationDownlink) {
 				if downlink != nil { //downlink ricevuto
 
 					d.ExecuteMACCommand(*downlink)
-
 				}
 
 			} else {
@@ -375,7 +374,7 @@ func (d *Device) SwitchClass(class int) {
 
 }
 
-//se il dispositivo non supporta OTAA non può essere unjoined
+// se il dispositivo non supporta OTAA non può essere unjoined
 func (d *Device) UnJoined() bool {
 
 	if d.Info.Configuration.SupportedOtaa {
