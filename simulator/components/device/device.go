@@ -24,7 +24,7 @@ type Device struct {
 	Mutex     sync.Mutex               `json:"-"`
 }
 
-//*******************Intern func*******************/
+// *******************Intern func*******************/
 func (d *Device) Run() {
 
 	defer d.Resources.ExitGroup.Done()
@@ -122,4 +122,23 @@ func (d *Device) Print(content string, err error, printType int) {
 		log.Println(messageLog)
 	}
 
+}
+
+func (d *Device) PrintDownlink(fPort byte, buffer []byte) {
+
+	messageLog := ""
+	class := d.Class.ToString()
+	mode := d.modeToString()
+
+	messageLog = fmt.Sprintf("DEV[%s] |%s| {%s}: Downlink Received: %s", d.Info.Name, mode, class, buffer)
+
+	data := socket.ReceiveDownlink{
+		Time:   time.Now().UnixMilli(),
+		Name:   d.Info.Name,
+		Buffer: buffer,
+		FPort:  fPort,
+	}
+
+	d.Resources.WebSocket.Emit(socket.EventReceivedDownlink, data)
+	log.Println(messageLog)
 }
