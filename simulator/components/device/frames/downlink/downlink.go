@@ -6,7 +6,7 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-//Downlink set with info of resp
+// Downlink set with info of resp
 type InformationDownlink struct {
 	MType         lorawan.MType     `json:"-"` //per FPending
 	FOptsReceived []lorawan.Payload `json:"-"`
@@ -56,7 +56,11 @@ func GetDownlink(phy lorawan.PHYPayload, disableCounter bool, counter uint32, Nw
 	if len(macPL.FHDR.FOpts) != 0 {
 
 		if macPL.FPort == nil || *macPL.FPort != uint8(0) { // MACCommand in Fopts
-			downlink.FOptsReceived = append(downlink.FOptsReceived, macPL.FHDR.FOpts...)
+			if downlink.FOptsReceived != nil {
+				downlink.FOptsReceived = append(downlink.FOptsReceived, macPL.FHDR.FOpts...)
+			} else {
+				downlink.FOptsReceived = macPL.FHDR.FOpts
+			}
 		}
 
 	}
