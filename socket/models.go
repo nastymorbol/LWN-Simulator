@@ -7,6 +7,13 @@ type ConsoleLog struct {
 	Msg  string `json:"message"`
 }
 
+type ReceiveDownlink struct {
+	Time   int64  `json:"time"`
+	Name   string `json:"name"`
+	FPort  byte   `json:"fport"`
+	Buffer []byte `json:"buffer"`
+}
+
 type NewStatusDev struct {
 	DevEUI   lorawan.EUI64   `json:"devEUI"`
 	DevAddr  lorawan.DevAddr `json:"devAddr"`
