@@ -4,8 +4,10 @@ Description=LoraWan Simulator
 After=network.target
 
 [Service]
+Environment=HOME=/root
 Type=simple
 Restart=always
+RestartSec=30
 ExecStart=/opt/lwnsimulator/lwnsimulator_x64
 WorkingDirectory=/opt/lwnsimulator/
 
