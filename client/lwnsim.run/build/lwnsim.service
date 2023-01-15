@@ -1,0 +1,13 @@
+# Contents of /lib/systemd/system/rftasmd.service
+[Unit]
+Description=RF Tasmota to FHEM
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+ExecStart=/opt/rftasmd/mqtt-fhem
+WorkingDirectory=/opt/rftasmd/
+
+[Install]
+WantedBy=multi-user.target
