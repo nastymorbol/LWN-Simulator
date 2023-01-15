@@ -1,3 +1,4 @@
 bin
 cmd/__debug_bin
 client/lwnsim.run/build/lwnsim/**
+webserver/statik/statik.go

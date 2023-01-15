@@ -1,0 +1,13 @@
+# Contents of /lib/systemd/system/lwnsimulator.service
+[Unit]
+Description=LoraWan Simulator
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+ExecStart=/opt/lwnsimulator/lwnsimulator_x64
+WorkingDirectory=/opt/lwnsimulator/
+
+[Install]
+WantedBy=multi-user.target
