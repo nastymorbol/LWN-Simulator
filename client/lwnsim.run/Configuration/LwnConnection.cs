@@ -1,3 +1,5 @@
+namespace lwnsim.Configuration;
+
 public class LwnConnection
 {
 #pragma warning disable CS8618

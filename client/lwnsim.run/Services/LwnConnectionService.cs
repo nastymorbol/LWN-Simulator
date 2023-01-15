@@ -1,14 +1,20 @@
 using System.Net.Http.Json;
+using System.Reflection;
 using System.Text.Json;
+using lwnsim.Configuration;
+using lwnsim.Devices;
 using lwnsim.Poco.Socket.Io;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SocketIOClient;
 using SocketIOClient.JsonSerializer;
 
-public class LwnConnectionService
+public class LwnConnectionService : IHostedService
 {
     private readonly ILogger _logger;
+    private readonly IHostApplicationLifetime _applicationLifetime;
+    private readonly SimuDeviceFactory _deviceFactory;
     private readonly LwnConnection _connection;
     private readonly HttpClient _httpClient;
     private readonly SocketIO _socketIo;
@@ -17,11 +23,11 @@ public class LwnConnectionService
         PropertyNameCaseInsensitive = true
     };
 
-
-
-    public LwnConnectionService(ILogger<LwnConnectionService> logger, IOptions<LwnConnection> options, IHttpClientFactory factory)
+    public LwnConnectionService(ILogger<LwnConnectionService> logger, IHostApplicationLifetime applicationLifetime, IOptions<LwnConnection> options, IHttpClientFactory factory, SimuDeviceFactory deviceFactory)
     {
         _logger = logger;
+        _applicationLifetime = applicationLifetime;
+        _deviceFactory = deviceFactory;
         _connection = options.Value;
         _httpClient = factory.CreateClient(nameof(LwnConnectionService));
         
@@ -33,23 +39,26 @@ public class LwnConnectionService
         
         _socketIo.On( Events.EventDev, response =>
         {
-            _logger.LogInformation("[{Channel}] {Response}", Events.EventDev, response);
+            _logger.LogTrace("[{Channel}] {Response}", Events.EventDev, response);
+            var message = response.GetValue<ConsoleLog>();
+            _deviceFactory.Process(message);
         });
 
         _socketIo.On(Events.EventLog, response =>
         {
-            _logger.LogInformation("[{Channel}] {Response}", Events.EventLog, response);
+            _logger.LogTrace("[{Channel}] {Response}", Events.EventLog, response);
         });
         
         _socketIo.On(Events.EventResponseCommand, response =>
         {
-            _logger.LogInformation("[{Channel}] {Response}", Events.EventResponseCommand, response);
+            _logger.LogTrace("[{Channel}] {Response}", Events.EventResponseCommand, response);
         });
         
         _socketIo.On(Events.EventReceivedDownlink, response =>
         {
-            _logger.LogInformation("[{Channel}] {Response}", Events.EventResponseCommand, response);
+            _logger.LogTrace("[{Channel}] {Response}", Events.EventResponseCommand, response);
             var downlink = response.GetValue<ReceiveDownlink>();
+            _deviceFactory.Process(downlink);
         });
         
         _socketIo.OnConnected += (sender, e) =>
@@ -59,6 +68,8 @@ public class LwnConnectionService
         _socketIo.OnDisconnected += async (sender, e) =>
         {
             _logger.LogInformation("Socket.IO Disconnected");
+            _logger.LogError("Socket.IO Disconnected. Restart application.");
+            _applicationLifetime.StopApplication();
         };
         _socketIo.OnReconnected += async (sender, e) =>
         {
@@ -118,5 +129,19 @@ public class LwnConnectionService
         if(_socketIo.Disconnected)
             await _socketIo.ConnectAsync();
         await _socketIo.EmitAsync(Events.EventChangePayload, cancellationToken, new NewPayload(){ Id = id, MType = "ConfirmedDataUp", Payload = payload});
+    }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        if(_socketIo.Disconnected)
+            await _socketIo.ConnectAsync();
+        await StartSimulatorAsync(cancellationToken);
+    }
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        if(_socketIo.Connected)
+            await _socketIo.DisconnectAsync();
+        await StopSimulatorAsync(cancellationToken);
     }
 }

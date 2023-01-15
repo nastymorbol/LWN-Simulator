@@ -1,13 +1,13 @@
-# Contents of /lib/systemd/system/rftasmd.service
+# Contents of /lib/systemd/system/lwnsim.service
 [Unit]
-Description=RF Tasmota to FHEM
+Description=LoraWan Simulator Device Configurator
 After=network.target
 
 [Service]
 Type=simple
 Restart=always
-ExecStart=/opt/rftasmd/mqtt-fhem
-WorkingDirectory=/opt/rftasmd/
+ExecStart=/opt/lwnsim/lwnsim
+WorkingDirectory=/opt/lwnsim/
 
 [Install]
 WantedBy=multi-user.target
