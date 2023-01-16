@@ -9,7 +9,7 @@ rm ./$NAME/*.xml
 
 #dotnet publish ../$NAME.csproj -c Debug -r osx-x64 --no-self-contained -p:PublishSingleFile=true -o ./$NAME
 
+rsync -v ./$NAME.service root@$HOST:/lib/systemd/system/$NAME.service
 ssh root@$HOST "systemctl daemon-reload; systemctl stop $NAME.service"
 rsync -rv ./$NAME root@$HOST:/opt
-rsync -v ./$NAME.service root@$HOST:/lib/systemd/system/$NAME.service
 ssh root@$HOST "systemctl daemon-reload; systemctl enable $NAME.service; systemctl start $NAME.service; systemctl status $NAME.service"
