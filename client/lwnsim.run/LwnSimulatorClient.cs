@@ -17,7 +17,7 @@ public class LwnSimulatorClient : BackgroundService
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Start lwn-client");
+        _logger.LogInformation("Execute {Process}", nameof(LwnSimulatorClient));
         while (!stoppingToken.IsCancellationRequested)
         {
             Thread.Sleep(1_000);

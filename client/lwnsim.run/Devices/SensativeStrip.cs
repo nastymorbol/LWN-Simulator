@@ -230,7 +230,7 @@ public class SensativeStrip : SimDeviceBase
         if (!_uplinkReceived) return;
         _uplinkReceived = false;
 
-        var payload = Convert.ToHexString( _currentState.Encode() );
+        var payload = "0x" + Convert.ToHexString( _currentState.Encode() );
         
         _logger.LogInformation("Send Payload {Payload}", payload);
         await _connectionService.SendPayloadAsync(device.id, payload, CancellationToken.None);

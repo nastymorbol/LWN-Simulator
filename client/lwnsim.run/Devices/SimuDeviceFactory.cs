@@ -1,4 +1,7 @@
+using System.Net;
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using lwnsim.Poco.Http;
 using lwnsim.Poco.Socket.Io;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,14 +13,29 @@ public class SimuDeviceFactory
 {
     private readonly ILogger<SimuDeviceFactory> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly JsonSerializerOptions _serializerOptions = new()
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
     private static readonly Dictionary<int, Dictionary<string, object>> _deviceData = new();
     private static readonly Dictionary<int, LwnDeviceResponse> _deviceResponses = new();
-
-
+    private const string DataDirectory = "./persistence";
+    private bool _canPersistData = false;
     public SimuDeviceFactory(ILogger<SimuDeviceFactory> logger, IServiceProvider serviceProvider)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
+
+        try
+        {
+            // if (!Directory.Exists(DataDirectory))
+            //     Directory.CreateDirectory(DataDirectory);
+            _canPersistData = false;
+        }
+        catch
+        {
+            _canPersistData = false;
+        }
     }
     
     public void Process(LwnDeviceResponse device)
@@ -59,7 +77,7 @@ public class SimuDeviceFactory
         
         if (_deviceData.TryGetValue(deviceId.Value, out var result))
             return result;
-        _deviceData[deviceId.Value] = new();
+        _deviceData[deviceId.Value] = new() { {"id", deviceId.Value} };
         return _deviceData[deviceId.Value];
     }
 
