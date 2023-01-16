@@ -133,15 +133,18 @@ public class LwnConnectionService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        await StartSimulatorAsync(cancellationToken);
         if(_socketIo.Disconnected)
             await _socketIo.ConnectAsync();
-        await StartSimulatorAsync(cancellationToken);
     }
 
-    public async Task StopAsync(CancellationToken cancellationToken)
+    public Task StopAsync(CancellationToken cancellationToken)
     {
+        //await StopSimulatorAsync(cancellationToken);
+        
         if(_socketIo.Connected)
-            await _socketIo.DisconnectAsync();
-        await StopSimulatorAsync(cancellationToken);
+            _socketIo.Dispose();
+
+        return Task.CompletedTask;
     }
 }
