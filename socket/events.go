@@ -13,6 +13,7 @@ const (
 	EventChangePayload      = "change-payload"
 	EventSendUplink         = "send-uplink"
 	EventReceivedDownlink   = "rec-down"
+	EventReceivedUplink     = "rec-uplink"
 	EventChangeLocation     = "change-location"
 	EventGetParameters      = "get-regional-parameters"
 )

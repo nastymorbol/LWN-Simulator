@@ -14,6 +14,12 @@ type ReceiveDownlink struct {
 	Buffer []byte `json:"buffer"`
 }
 
+type ReceiveUplink struct {
+	Time   int64  `json:"time"`
+	Name   string `json:"name"`
+	Buffer []byte `json:"buffer"`
+}
+
 type NewStatusDev struct {
 	DevEUI   lorawan.EUI64   `json:"devEUI"`
 	DevAddr  lorawan.DevAddr `json:"devAddr"`

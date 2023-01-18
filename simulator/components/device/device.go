@@ -1,12 +1,14 @@
 package device
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log"
 	"sync"
 	"time"
 
 	res "github.com/arslab/lwnsimulator/simulator/resources"
+	"github.com/brocaar/lorawan"
 
 	"github.com/arslab/lwnsimulator/simulator/components/device/classes"
 	"github.com/arslab/lwnsimulator/simulator/components/device/models"
@@ -140,5 +142,36 @@ func (d *Device) PrintDownlink(fPort byte, buffer []byte) {
 	}
 
 	d.Resources.WebSocket.Emit(socket.EventReceivedDownlink, data)
+	log.Println(messageLog)
+}
+
+func (d *Device) PrintUploadSent(packet lorawan.Payload) {
+
+	var buffer []byte
+	var err error
+
+	err = nil
+	buffer = nil
+
+	messageLog := ""
+	class := d.Class.ToString()
+	mode := d.modeToString()
+
+	buffer, err = packet.MarshalBinary()
+
+	if err != nil {
+		d.Print("", err, util.PrintOnlyConsole)
+		return
+	}
+
+	messageLog = fmt.Sprintf("DEV[%s] |%s| {%s}: Uplink sent: %s", d.Info.Name, mode, class, base64.StdEncoding.EncodeToString(buffer))
+
+	data := socket.ReceiveUplink{
+		Time:   time.Now().UnixMilli(),
+		Name:   d.Info.Name,
+		Buffer: buffer,
+	}
+
+	d.Resources.WebSocket.Emit(socket.EventReceivedUplink, data)
 	log.Println(messageLog)
 }

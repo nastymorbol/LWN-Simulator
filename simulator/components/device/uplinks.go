@@ -104,6 +104,7 @@ func (d *Device) CreateUplink() [][]byte {
 
 	d.Info.Status.LastUplinks = frames
 
+	d.PrintUploadSent(payload)
 	return frames
 }
 
