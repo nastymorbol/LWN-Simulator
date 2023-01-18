@@ -1,30 +1,20 @@
 using System.Reflection;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Jurassic;
-using Jurassic.Library;
-using lwnsim.JsDecoder;
+using lwnsim.Devices.Interfaces;
 using lwnsim.Poco.Http;
 using lwnsim.Poco.Socket.Io;
 using Microsoft.Extensions.Logging;
 
 namespace lwnsim.Devices;
 
-public class SensativeStrip : SimDeviceBase
+public sealed class SensativeStrip : SimDeviceBase
 {
     private readonly ILogger<SensativeStrip> _logger;
     private readonly LwnConnectionService _connectionService;
     private readonly Random _random = new (DateTime.Now.Millisecond);
 
-    enum SendState
-    {
-        AvgTemperatur,
-        DoorClosed,
-        DoorOpened
-    }
-
-    private SensativePayload _currentState = new SensativePayload();
+    private SensativePayload _currentState = new ();
     private bool _uplinkReceived;
 
 
@@ -210,68 +200,49 @@ public class SensativeStrip : SimDeviceBase
         // var call3 = engine.Decode<SensativePayload>(Convert.FromHexString("ffff01630901110000"), 1);
         // var call4 = engine.Decode<SensativePayload>(encoded, 1);
     }
-    
 
-    public override async Task ProcessAsync(LwnDeviceResponse device, Dictionary<string, object>? data)
+
+    public override bool CanHandle(LwnDeviceResponse device)
     {
-        if(!device.info.name.Contains("sensative", StringComparison.InvariantCultureIgnoreCase))
-            return;
-        // avg temp
-        // await _lwnConnectionService.ChangePayloadAsync(deviceResponse.id, "0xffff01630400c1", stoppingToken);
-        // await Task.Delay(30_000, stoppingToken);
-        // door open
-        //await _lwnConnectionService.SendPayloadAsync(deviceResponse.id, "0xffff01630900110000", stoppingToken);
-        //await Task.Delay(30_000, stoppingToken);
-        // door closed
-        //await _lwnConnectionService.SendPayloadAsync(deviceResponse.id, "0xffff01630901110000", stoppingToken);
-        //await Task.Delay(30_000, stoppingToken);
+        return device.info.name.Contains("sensative", StringComparison.InvariantCultureIgnoreCase);
+    }
 
-        
+    public override async Task ProcessAsync(LwnDeviceResponse device)
+    {
+
         if (!_uplinkReceived) return;
         _uplinkReceived = false;
 
-        var payload = "0x" + Convert.ToHexString( _currentState.Encode() );
         
-        _logger.LogInformation("Send Payload {Payload}", payload);
-        await _connectionService.SendPayloadAsync(device.id, payload, CancellationToken.None);
-            
-
+        await _connectionService.EnqueuePayloadAsync(device.id, _currentState.Encode(), CancellationToken.None);
     }
 
-    public override Task ProcessAsync(ReceiveDownlink downlink, Dictionary<string, object>? data)
+    public override Task ProcessAsync(ConsoleLog message)
     {
-        return Task.CompletedTask;
-    }
+        if (!message.Message.Contains("Uplink sent", StringComparison.InvariantCultureIgnoreCase))
+            return base.ProcessAsync(message);
+        
+        _uplinkReceived = true;
 
-    public override Task ProcessAsync(ConsoleLog message, Dictionary<string, object> data)
-    {
-        if(!message.Name.Contains("sensative", StringComparison.InvariantCultureIgnoreCase))
-            return base.ProcessAsync(message, data);;
-
-        if (message.Message.Contains("Uplink sent", StringComparison.InvariantCultureIgnoreCase))
-        {
-            _uplinkReceived = true;
-
-            const double rad = Math.PI / 180;
-            _currentState ??= new();
+        const double rad = Math.PI / 180;
+        _currentState ??= new();
             
-            _currentState.Door = !_currentState.Door;
-            _currentState.Temperature = Math.Sin(rad * DateTime.Now.Minute * 1.5) * 20 + 10;
-            _currentState.AverageTemperature = Math.Sin(rad * DateTime.Now.Hour * 3.75) * 20 + 10;
-            _currentState.TempAlarm = (_currentState.Temperature.Value > 25, _currentState.Temperature.Value < 15);
-            _currentState.AvgTempAlarm = (_currentState.AverageTemperature.Value > 25, _currentState.AverageTemperature.Value < 15);
-            _currentState.Battery = (byte)_random.Next(0, 100);
+        _currentState.Door = !_currentState.Door;
+        _currentState.Temperature = Math.Sin(rad * DateTime.Now.Minute * 1.5) * 20 + 10;
+        _currentState.AverageTemperature = Math.Sin(rad * DateTime.Now.Hour * 3.75) * 20 + 10;
+        _currentState.TempAlarm = (_currentState.Temperature.Value > 25, _currentState.Temperature.Value < 15);
+        _currentState.AvgTempAlarm = (_currentState.AverageTemperature.Value > 25, _currentState.AverageTemperature.Value < 15);
+        _currentState.Battery = (byte)_random.Next(0, 100);
             
-            if (_currentState.AvgTempAlarm is {LowAlarm: false, HighAlarm: false})
-                _currentState.AvgTempAlarm = null;
-            if (_currentState.TempAlarm is {LowAlarm: false, HighAlarm: false})
-                _currentState.TempAlarm = null;
-            if(_currentState.Door is {Value:false})
-                _currentState.DoorCount += 1;
+        if (_currentState.AvgTempAlarm is {LowAlarm: false, HighAlarm: false})
+            _currentState.AvgTempAlarm = null;
+        if (_currentState.TempAlarm is {LowAlarm: false, HighAlarm: false})
+            _currentState.TempAlarm = null;
+        if(_currentState.Door is {Value:false})
+            _currentState.DoorCount += 1;
 
-            _logger.LogInformation("Changed status to {State}", _currentState);
-        }
+        _logger.LogInformation("Changed status to {State}", _currentState);
 
-        return base.ProcessAsync(message, data);
+        return base.ProcessAsync(message);
     }
 }

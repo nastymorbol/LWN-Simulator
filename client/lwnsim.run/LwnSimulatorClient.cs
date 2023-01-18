@@ -1,4 +1,5 @@
 using lwnsim.Devices;
+using lwnsim.Devices.Factory;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -6,9 +7,9 @@ public class LwnSimulatorClient : BackgroundService
 {
     private readonly ILogger<LwnSimulatorClient> _logger;
     private readonly LwnConnectionService _lwnConnectionService;
-    private readonly SimuDeviceFactory _deviceFactory;
+    private readonly SimDeviceFactory _deviceFactory;
 
-    public LwnSimulatorClient(ILogger<LwnSimulatorClient> logger, LwnConnectionService lwnConnectionService, SimuDeviceFactory deviceFactory)
+    public LwnSimulatorClient(ILogger<LwnSimulatorClient> logger, LwnConnectionService lwnConnectionService, SimDeviceFactory deviceFactory)
     {
         _logger = logger;
         _lwnConnectionService = lwnConnectionService;
@@ -21,22 +22,6 @@ public class LwnSimulatorClient : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             Thread.Sleep(1_000);
-            try
-            {
-                //await _lwnConnectionService.StartSimulatorAsync(stoppingToken);
-                var devices = await _lwnConnectionService.GetDevicesAsync(stoppingToken);
-            
-                foreach (var device in devices)
-                {
-                    _deviceFactory.Process(device);
-                }
-            }
-            catch (Exception e)
-            {
-                _logger.LogError("Error while starting simulation: {Message}", e.Message);
-                continue;
-            }
-            
         }
     }
 

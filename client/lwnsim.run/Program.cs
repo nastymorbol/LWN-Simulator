@@ -2,6 +2,8 @@
 
 using lwnsim.Configuration;
 using lwnsim.Devices;
+using lwnsim.Devices.Factory;
+using lwnsim.Devices.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -31,7 +33,7 @@ var app = Host.CreateDefaultBuilder(args)
             client.BaseAddress = provider.GetRequiredService<IOptions<LwnConnection>>().Value.ApiUrl;
         });
         
-        services.AddSingleton<SimuDeviceFactory>();
+        services.AddSingleton<SimDeviceFactory>();
         services.AddSingleton<ISimuDevice, SensativeStrip>();
     })
     .Build();

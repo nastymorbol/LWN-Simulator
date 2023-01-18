@@ -19,9 +19,16 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="JsDecoder\strips-ttn-decoder.js">
+    <None Update="JsDecoder\Sensative\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="JsDecoder\Milesight\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="JsDecoder\Milesight" />
   </ItemGroup>
 
 </Project>

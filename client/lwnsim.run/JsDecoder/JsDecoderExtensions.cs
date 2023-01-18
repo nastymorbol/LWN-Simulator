@@ -20,8 +20,11 @@ public static class JsDecoderExtensions
         return ju;
     }
     
-    public static T? MapTo<T>(this ObjectInstance objectInstance) where T : new()
+    public static T? MapTo<T>(this ObjectInstance? objectInstance) where T : new()
     {
+        if (objectInstance == null)
+            return default;
+        
         _engine.SetGlobalValue("instance", objectInstance);
         var json = _engine.Evaluate<string>("JSON.stringify(instance);");
 
@@ -34,6 +37,7 @@ public static class JsDecoderExtensions
     public static T? Decode<T>(this ScriptEngine engine, byte[] buffer, byte fport) where T : new()
     {
         var instance = engine.CallGlobalFunction("Decoder", buffer.ToJsArray(), (int)fport) as ObjectInstance;
-        return instance.MapTo<T>();
+        
+        return instance.MapTo<T>() ?? default;
     }
 }

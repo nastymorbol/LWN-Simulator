@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace lwnsim.Poco.Http;
 
+#pragma warning disable CS8618
 public class LwnDeviceResponse
 {
     [JsonPropertyName("id")]   public int id { get; set; }

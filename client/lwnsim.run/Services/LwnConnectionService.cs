@@ -1,8 +1,8 @@
 using System.Net.Http.Json;
-using System.Reflection;
 using System.Text.Json;
 using lwnsim.Configuration;
 using lwnsim.Devices;
+using lwnsim.Devices.Factory;
 using lwnsim.Poco.Socket.Io;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -10,11 +10,12 @@ using Microsoft.Extensions.Options;
 using SocketIOClient;
 using SocketIOClient.JsonSerializer;
 
+#pragma warning disable CS8618
 public class LwnConnectionService : IHostedService
 {
     private readonly ILogger _logger;
     private readonly IHostApplicationLifetime _applicationLifetime;
-    private readonly SimuDeviceFactory _deviceFactory;
+    private readonly SimDeviceFactory _deviceFactory;
     private readonly LwnConnection _connection;
     private readonly HttpClient _httpClient;
     private readonly SocketIO _socketIo;
@@ -23,7 +24,7 @@ public class LwnConnectionService : IHostedService
         PropertyNameCaseInsensitive = true
     };
 
-    public LwnConnectionService(ILogger<LwnConnectionService> logger, IHostApplicationLifetime applicationLifetime, IOptions<LwnConnection> options, IHttpClientFactory factory, SimuDeviceFactory deviceFactory)
+    public LwnConnectionService(ILogger<LwnConnectionService> logger, IHostApplicationLifetime applicationLifetime, IOptions<LwnConnection> options, IHttpClientFactory factory, SimDeviceFactory deviceFactory)
     {
         _logger = logger;
         _applicationLifetime = applicationLifetime;
@@ -37,11 +38,11 @@ public class LwnConnectionService : IHostedService
         });
         _socketIo.JsonSerializer = new CustomJsonSerializer(3);
         
-        _socketIo.On( Events.EventDev, response =>
+        _socketIo.On( Events.EventDev, async response =>
         {
             _logger.LogTrace("[{Channel}] {Response}", Events.EventDev, response);
             var message = response.GetValue<ConsoleLog>();
-            _deviceFactory.Process(message);
+            await _deviceFactory.ProcessAsync(message);
         });
 
         _socketIo.On(Events.EventLog, response =>
@@ -54,24 +55,30 @@ public class LwnConnectionService : IHostedService
             _logger.LogTrace("[{Channel}] {Response}", Events.EventResponseCommand, response);
         });
         
-        _socketIo.On(Events.EventReceivedDownlink, response =>
+        _socketIo.On(Events.EventReceivedDownlink, async response =>
         {
             _logger.LogTrace("[{Channel}] {Response}", Events.EventResponseCommand, response);
             var downlink = response.GetValue<ReceiveDownlink>();
-            _deviceFactory.Process(downlink);
+            await _deviceFactory.ProcessAsync(downlink);
+        });
+        _socketIo.On(Events.EventReceivedUplink, async response =>
+        {
+            _logger.LogTrace("[{Channel}] {Response}", Events.EventSendUplink, response);
+            var uplink = response.GetValue<ReceiveUplink>();
+            await _deviceFactory.ProcessAsync(uplink);
         });
         
         _socketIo.OnConnected += (sender, e) =>
         {
             _logger.LogInformation("Socket.IO Connected");
         };
-        _socketIo.OnDisconnected += async (sender, e) =>
+        _socketIo.OnDisconnected += (sender, e) =>
         {
             _logger.LogInformation("Socket.IO Disconnected");
             _logger.LogError("Socket.IO Disconnected. Restart application.");
             _applicationLifetime.StopApplication();
         };
-        _socketIo.OnReconnected += async (sender, e) =>
+        _socketIo.OnReconnected += (sender, e) =>
         {
             _logger.LogInformation("Socket.IO Reconnected");
         };
@@ -84,7 +91,7 @@ public class LwnConnectionService : IHostedService
         var devices = await _httpClient
             .GetFromJsonAsync<IEnumerable<lwnsim.Poco.Http.LwnDeviceResponse>>("devices", _jsonOptions, cancellationToken: cancellationToken);
 
-        return devices;
+        return devices ?? Enumerable.Empty<lwnsim.Poco.Http.LwnDeviceResponse>();
     }
     
     public async Task StopSimulatorAsync(CancellationToken cancellationToken)
@@ -96,7 +103,10 @@ public class LwnConnectionService : IHostedService
     public async Task StartSimulatorAsync(CancellationToken cancellationToken)
     {
         var response = await _httpClient
-            .GetStringAsync("start",cancellationToken: cancellationToken);
+            .GetStringAsync("start", cancellationToken: cancellationToken);
+        
+        if(_socketIo.Disconnected)
+            await _socketIo.ConnectAsync();
     }
 
     class CustomJsonSerializer : SystemTextJsonSerializer
@@ -116,14 +126,38 @@ public class LwnConnectionService : IHostedService
     }
     
     
-    public async Task SendPayloadAsync(int id, string payload, CancellationToken cancellationToken)
+    /// <summary>
+    /// Sends the Payload on next Downlink Cycle defined in the Simulated device.
+    /// </summary>
+    /// <param name="id">Simulated Device ID</param>
+    /// <param name="payload">Payload</param>
+    /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+    public async Task EnqueuePayloadAsync(int id, string payload, CancellationToken cancellationToken)
     {
         // 42["send-uplink",{"id":0,"mtype":"ConfirmedDataUp","payload":"0xffff01630400c1"}]	1673651564.2782326
+        _logger.LogInformation("Enqueue Payload {Payload}", payload);
         if(_socketIo.Disconnected)
             await _socketIo.ConnectAsync();
         await _socketIo.EmitAsync(Events.EventSendUplink, cancellationToken, new NewPayload(){ Id = id, MType = "ConfirmedDataUp", Payload = payload});
-        
     }
+    
+    /// <summary>
+    /// Sends the Payload on next Downlink Cycle defined in the Simulated device.
+    /// </summary>
+    /// <param name="id">Simulated Device ID</param>
+    /// <param name="payload">Payload</param>
+    /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+    public async Task EnqueuePayloadAsync(int id, byte[] buffer, CancellationToken cancellationToken)
+    {
+        // 42["send-uplink",{"id":0,"mtype":"ConfirmedDataUp","payload":"0xffff01630400c1"}]	1673651564.2782326
+        var payload = "0x" + Convert.ToHexString( buffer );
+        _logger.LogInformation("Enqueue Payload {Payload}", payload);
+
+        if(_socketIo.Disconnected)
+            await _socketIo.ConnectAsync();
+        await _socketIo.EmitAsync(Events.EventSendUplink, cancellationToken, new NewPayload(){ Id = id, MType = "ConfirmedDataUp", Payload = payload});
+    }
+    
     public async Task ChangePayloadAsync(int id, string payload, CancellationToken cancellationToken)
     {
         if(_socketIo.Disconnected)
@@ -134,8 +168,13 @@ public class LwnConnectionService : IHostedService
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await StartSimulatorAsync(cancellationToken);
-        if(_socketIo.Disconnected)
-            await _socketIo.ConnectAsync();
+
+        var devices = await GetDevicesAsync(cancellationToken);
+            
+        foreach (var device in devices)
+        {
+            await _deviceFactory.ProcessAsync(device);
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

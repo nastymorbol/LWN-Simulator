@@ -27,6 +27,14 @@ public class ReceiveDownlink {
 	[JsonIgnore] public string? Utf8Buffer => Buffer == null ? null : Encoding.UTF8.GetString(Buffer);
 }
 
+public class ReceiveUplink {
+	[JsonPropertyName("time")]   public long   Time          {get;set;}
+	[JsonPropertyName("name")]   public string Name          {get;set;} 
+	[JsonPropertyName("buffer")] public string Base64        {get;set;}
+	[JsonIgnore] public byte[]? Buffer => string.IsNullOrWhiteSpace(Base64) ? null : Convert.FromBase64String(Base64);
+	[JsonIgnore] public string? Utf8Buffer => Buffer == null ? null : Encoding.UTF8.GetString(Buffer);
+}
+
 public class NewPayload {
 	[JsonPropertyName("id")] public int Id      {get;set;}
 	[JsonPropertyName("mtype")] public string MType   {get;set;}
