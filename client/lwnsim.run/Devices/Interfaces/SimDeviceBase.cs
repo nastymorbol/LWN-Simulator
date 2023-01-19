@@ -5,21 +5,24 @@ namespace lwnsim.Devices.Interfaces;
 
 public abstract class SimDeviceBase : ISimuDevice
 {
-    public abstract bool CanHandle(LwnDeviceResponse deviceResponse);
+    public int Id { get; private set; }
 
-    public virtual Task ProcessAsync(LwnDeviceResponse device)
-    { return Task.CompletedTask; }
+    public string Name { get; private set; } = String.Empty;
 
-    public virtual Task ProcessAsync(ReceiveDownlink downlink)
-    { return Task.CompletedTask; }
-
-    public virtual Task ProcessAsync(ConsoleLog message)
+    public bool CanHandle()
     {
-        return Task.CompletedTask;
+        return CanHandleDeviceResponse();
     }
 
-    public virtual Task ProcessAsync(ReceiveUplink deviceResponse)
-    {
-        return Task.CompletedTask;
-    }
+    protected abstract bool CanHandleDeviceResponse();
+
+
+    public virtual Task ProcessAsync() => Task.CompletedTask;
+    public virtual Task ProcessAsync(LwnDeviceResponse device) => Task.CompletedTask;
+
+    public virtual Task ProcessAsync(ReceiveDownlink downlink) => Task.CompletedTask;
+
+    public virtual Task ProcessAsync(ConsoleLog message) => Task.CompletedTask;
+
+    public virtual Task ProcessAsync(ReceiveUplink deviceResponse) => Task.CompletedTask;
 }

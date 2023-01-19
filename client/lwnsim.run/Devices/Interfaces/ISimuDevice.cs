@@ -5,8 +5,12 @@ namespace lwnsim.Devices.Interfaces;
 
 public interface ISimuDevice
 {
-    bool CanHandle(LwnDeviceResponse deviceResponse);
+    int Id { get; }
+    string Name { get; }
+    
+    bool CanHandle();
 
+    Task ProcessAsync();
     Task ProcessAsync(LwnDeviceResponse device);
     Task ProcessAsync(ReceiveDownlink downlink);
     Task ProcessAsync(ConsoleLog message);

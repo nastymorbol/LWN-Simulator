@@ -20,7 +20,7 @@ public class NewStatusDev {
 
 public class ReceiveDownlink {
 	[JsonPropertyName("time")]   public long   Time          {get;set;}
-	[JsonPropertyName("name")]   public string Name          {get;set;}
+	[JsonPropertyName("Name")]   public string Name          {get;set;}
 	[JsonPropertyName("fport")]  public byte   FPort         {get;set;}
 	[JsonPropertyName("buffer")] public string Base64        {get;set;}
 	[JsonIgnore] public byte[]? Buffer => string.IsNullOrWhiteSpace(Base64) ? null : Convert.FromBase64String(Base64);
@@ -29,7 +29,7 @@ public class ReceiveDownlink {
 
 public class ReceiveUplink {
 	[JsonPropertyName("time")]   public long   Time          {get;set;}
-	[JsonPropertyName("name")]   public string Name          {get;set;} 
+	[JsonPropertyName("Name")]   public string Name          {get;set;} 
 	[JsonPropertyName("buffer")] public string Base64        {get;set;}
 	[JsonIgnore] public byte[]? Buffer => string.IsNullOrWhiteSpace(Base64) ? null : Convert.FromBase64String(Base64);
 	[JsonIgnore] public string? Utf8Buffer => Buffer == null ? null : Encoding.UTF8.GetString(Buffer);

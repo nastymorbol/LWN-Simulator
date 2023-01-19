@@ -3,6 +3,7 @@ using System.Text.Json;
 using lwnsim.Configuration;
 using lwnsim.Devices;
 using lwnsim.Devices.Factory;
+using lwnsim.Devices.Interfaces;
 using lwnsim.Poco.Socket.Io;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -129,9 +130,9 @@ public class LwnConnectionService : IHostedService
     /// <summary>
     /// Sends the Payload on next Downlink Cycle defined in the Simulated device.
     /// </summary>
-    /// <param name="id">Simulated Device ID</param>
-    /// <param name="payload">Payload</param>
-    /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+    /// <param Name="id">Simulated Device ID</param>
+    /// <param Name="payload">Payload</param>
+    /// <param Name="cancellationToken">Propagates notification that operations should be canceled.</param>
     public async Task EnqueuePayloadAsync(int id, string payload, CancellationToken cancellationToken)
     {
         // 42["send-uplink",{"id":0,"mtype":"ConfirmedDataUp","payload":"0xffff01630400c1"}]	1673651564.2782326
@@ -144,9 +145,9 @@ public class LwnConnectionService : IHostedService
     /// <summary>
     /// Sends the Payload on next Downlink Cycle defined in the Simulated device.
     /// </summary>
-    /// <param name="id">Simulated Device ID</param>
-    /// <param name="payload">Payload</param>
-    /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+    /// <param Name="id">Simulated Device ID</param>
+    /// <param Name="payload">Payload</param>
+    /// <param Name="cancellationToken">Propagates notification that operations should be canceled.</param>
     public async Task EnqueuePayloadAsync(int id, byte[] buffer, CancellationToken cancellationToken)
     {
         // 42["send-uplink",{"id":0,"mtype":"ConfirmedDataUp","payload":"0xffff01630400c1"}]	1673651564.2782326
@@ -158,6 +159,23 @@ public class LwnConnectionService : IHostedService
         await _socketIo.EmitAsync(Events.EventSendUplink, cancellationToken, new NewPayload(){ Id = id, MType = "ConfirmedDataUp", Payload = payload});
     }
     
+    /// <summary>
+    /// Sends the Payload on next Downlink Cycle defined in the Simulated device.
+    /// </summary>
+    /// <param Name="id">Simulated Device ID</param>
+    /// <param Name="payload">Payload</param>
+    /// <param Name="cancellationToken">Propagates notification that operations should be canceled.</param>
+    public async Task EnqueuePayloadAsync<T>(T device, CancellationToken cancellationToken = default) where T : ISimuDevice, IEncoder
+    {
+        if(device is not IEncoder encoder) return;
+        
+        var payload = "0x" + Convert.ToHexString( encoder.Encode() );
+        _logger.LogInformation("[{Id}:{Name}] Enqueue Payload {Payload}", device.Id, device.Name, payload);
+
+        if(_socketIo.Disconnected)
+            await _socketIo.ConnectAsync();
+        await _socketIo.EmitAsync(Events.EventSendUplink, cancellationToken, new NewPayload(){ Id = device.Id, MType = "ConfirmedDataUp", Payload = payload});
+    }
     public async Task ChangePayloadAsync(int id, string payload, CancellationToken cancellationToken)
     {
         if(_socketIo.Disconnected)
@@ -167,14 +185,14 @@ public class LwnConnectionService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await StartSimulatorAsync(cancellationToken);
-
         var devices = await GetDevicesAsync(cancellationToken);
             
         foreach (var device in devices)
         {
             await _deviceFactory.ProcessAsync(device);
         }
+
+        await StartSimulatorAsync(cancellationToken);
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

@@ -1,9 +1,12 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using lwnsim.Configuration;
 using lwnsim.Devices;
 using lwnsim.Devices.Factory;
 using lwnsim.Devices.Interfaces;
+using lwnsim.Devices.Milesight;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -34,7 +37,17 @@ var app = Host.CreateDefaultBuilder(args)
         });
         
         services.AddSingleton<SimDeviceFactory>();
-        services.AddSingleton<ISimuDevice, SensativeStrip>();
+
+
+        var devices = Assembly.GetExecutingAssembly().DefinedTypes
+            .Where(t => t.IsAssignableTo(typeof(ISimuDevice)) && !t.IsInterface && !t.IsAbstract ).ToArray();
+        
+        foreach (var device in devices)
+        {
+            services.AddTransient(typeof(ISimuDevice), device);
+        }
+        // services.AddTransient<ISimuDevice, SensativeStrip>();
+        // services.AddTransient<ISimuDevice, Em300th>();
     })
     .Build();
 

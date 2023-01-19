@@ -9,7 +9,7 @@ namespace lwnsim.Poco.Http;
 public class LwnDeviceResponse
 {
     [JsonPropertyName("id")]   public int id { get; set; }
-    [JsonPropertyName("info")] public Info info { get; set; }
+    [JsonPropertyName("info")] public Info Info { get; set; }
 }
 
 public class Info
@@ -19,7 +19,7 @@ public class Info
     [JsonPropertyName("nwkSKey")]   public string nwkSKey { get; set; }
     [JsonPropertyName("appSKey")]   public string appSKey { get; set; }
     [JsonPropertyName("appKey")]   public string appKey { get; set; }
-    [JsonPropertyName("name")]   public string name { get; set; }
+    [JsonPropertyName("name")]   public string Name { get; set; }
     [JsonPropertyName("status")]   public Status status { get; set; }
     [JsonPropertyName("configuration")]   public Configuration configuration { get; set; }
     [JsonPropertyName("location")]   public Location location { get; set; }

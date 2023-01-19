@@ -22,6 +22,7 @@ public class LwnSimulatorClient : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             Thread.Sleep(1_000);
+            await _deviceFactory.ProcessAsync();
         }
     }
 
@@ -29,11 +30,5 @@ public class LwnSimulatorClient : BackgroundService
     {
         await _lwnConnectionService.StartAsync(cancellationToken);
         await base.StartAsync(cancellationToken);
-    }
-
-    public override Task StopAsync(CancellationToken cancellationToken)
-    {
-        //return _lwnConnectionService.StopAsync(cancellationToken);
-        return base.StopAsync(cancellationToken);
     }
 }

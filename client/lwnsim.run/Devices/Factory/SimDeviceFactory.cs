@@ -11,127 +11,77 @@ namespace lwnsim.Devices.Factory;
 
 public class SimDeviceFactory
 {
+    const string key_can_handle = "can-handle-device";
+    const string key_name = "<Name>k__BackingField";
+    const string key_id = "<Id>k__BackingField";
+
     private readonly ILogger<SimDeviceFactory> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly JsonSerializerOptions _serializerOptions = new()
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
-    private static readonly Dictionary<int, Dictionary<string, object>> _deviceData = new();
-    private static readonly Dictionary<int, LwnDeviceResponse> _deviceResponses = new();
-    private const string DataDirectory = "./persistence";
+    //private static readonly Dictionary<int, LwnDeviceResponse> _deviceResponses = new();
+    //private const string DataDirectory = "./persistence";
 
     public SimDeviceFactory(ILogger<SimDeviceFactory> logger, IServiceProvider serviceProvider)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
     }
-    
+
+    public async Task ProcessAsync()
+    {
+        foreach (var device in _serviceProvider.GetDevices())
+        {
+            await device.ProcessAsync();
+            device.StoreValuesInStorage();
+        }
+    }
+
     public async Task ProcessAsync(LwnDeviceResponse deviceResponse)
     {
-        _deviceResponses[deviceResponse.id] = deviceResponse;
-        foreach (var device in _serviceProvider.GetServices<ISimuDevice>())
-        {
-            if(!DeviceCanHandle(device, deviceResponse, out var data)) continue;
-            
-            device.ApplyValuesFromStorage(data);
-            await device.ProcessAsync(deviceResponse);
-            device.StoreValuesInStorage(data);
-        }
+        // Device not handled yet
+        var device = _serviceProvider.GetDevice(deviceResponse.id, deviceResponse.Info.Name);
+        if (device == null) return;
+
+        await device.ProcessAsync(deviceResponse);
+        device.StoreValuesInStorage();
     }
 
 
     public async Task ProcessAsync(ReceiveDownlink downlink)
     {
-        var id = GetDeviceIdByName(downlink.Name);
-        foreach (var device in _serviceProvider.GetServices<ISimuDevice>())
-        {
-            if (!DeviceCanHandle(id, out var data)) continue;
-            device.ApplyValuesFromStorage(data);
-            await device.ProcessAsync(downlink);
-            device.StoreValuesInStorage(data);
-        }
+        var device = _serviceProvider.GetDevice(downlink.Name);
+        if (device == null) return;
+
+        await device.ProcessAsync(downlink);
+        device.StoreValuesInStorage();
     }
     
     public async Task ProcessAsync(ConsoleLog message)
     {
-        var id = GetDeviceIdByName(message.Name);
-        foreach (var device in _serviceProvider.GetServices<ISimuDevice>())
-        {
-            if (!DeviceCanHandle(id, out var data)) continue;
-            device.ApplyValuesFromStorage(data);
-            await device.ProcessAsync(message);
-            device.StoreValuesInStorage(data);
-        }
+        var device = _serviceProvider.GetDevice(message.Name);
+        if (device == null) return;
+
+        await device.ProcessAsync(message);
+        device.StoreValuesInStorage();
     }
 
     public async Task ProcessAsync(ReceiveUplink deviceResponse)
     {
-        var id = GetDeviceIdByName(deviceResponse.Name);
-        foreach (var device in _serviceProvider.GetServices<ISimuDevice>())
-        {
-            if (!DeviceCanHandle(id, out var data)) continue;
-            device.ApplyValuesFromStorage(data);
-            await device.ProcessAsync(deviceResponse);
-            device.StoreValuesInStorage(data);
-        }
+        var device = _serviceProvider.GetDevice(deviceResponse.Name);
+        if (device == null) return;
+
+        await device.ProcessAsync(deviceResponse);
+        device.StoreValuesInStorage();
     }
     
-    private static int? GetDeviceIdByName(string name)
-    {
-        foreach (var (key, value) in _deviceResponses)
-        {
-            if (value.info.name == name)
-                return key;
-        }
-        return null;
-    }
+
+
+
+
     
-    private static bool DeviceCanHandle(ISimuDevice device, LwnDeviceResponse response, out Dictionary<string, object> data)
-    {
-        const string can_handle_key = "can-handle-device";
 
-        data = GetDeviceData(response.id);
-        if (data == null) return false;
-        
-        if (data.TryGetValue(can_handle_key, out var value) && value is bool canHandle)
-            return canHandle;
-
-        canHandle = device.CanHandle(response);
-        data[can_handle_key] = canHandle;
-        return canHandle;
-    }
-    
-    private static bool DeviceCanHandle(int? id, out Dictionary<string, object> data)
-    {
-        const string can_handle_key = "can-handle-device";
-
-        data = GetDeviceData(id);
-
-        if (data == null)
-            return false;
-        
-        if (data.TryGetValue(can_handle_key, out var value) && value is bool canHandle)
-            return canHandle;
-        
-        return false;
-    }
-
-
-    private static Dictionary<string, object>? GetDeviceData(int? deviceId)
-    {
-        if (deviceId == null)
-            return null;
-        
-        if (_deviceData.TryGetValue(deviceId.Value, out var result))
-            return result;
-        
-        _deviceData[deviceId.Value] = new()
-        {
-            {"id", deviceId.Value}
-        };
-        
-        return _deviceData[deviceId.Value];
-    }
 
 }
