@@ -5,7 +5,7 @@ NAME=lwnsim
 HOST=172.20.47.214
 rm -rf ./$NAME
 dotnet publish ../$NAME.csproj -c Release -r linux-x64 --no-self-contained -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:DebugType=none -o ./$NAME
-rm ./$NAME/*.xml
+#rm ./$NAME/*.xml
 
 #dotnet publish ../$NAME.csproj -c Debug -r osx-x64 --no-self-contained -p:PublishSingleFile=true -o ./$NAME
 

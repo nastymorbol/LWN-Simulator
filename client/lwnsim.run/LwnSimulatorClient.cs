@@ -1,7 +1,4 @@
-using lwnsim.Devices;
 using lwnsim.Devices.Factory;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 public class LwnSimulatorClient : BackgroundService
 {

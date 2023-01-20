@@ -1,5 +1,3 @@
-using lwnsim.Devices.Interfaces;
-
 namespace lwnsim.Devices.Milesight;
 
 class Em300Payload : IEncoder
@@ -39,5 +37,11 @@ class Em300Payload : IEncoder
         Array.Resize(ref buffer, index);
 
         return buffer;
+    }
+
+
+    public override string ToString()
+    {
+        return System.Text.Json.JsonSerializer.Serialize(this);
     }
 }

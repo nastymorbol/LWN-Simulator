@@ -1,6 +1,4 @@
 using System.Reflection;
-using lwnsim.Devices.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace lwnsim.Devices.Extensions;
 
@@ -26,7 +24,7 @@ public static class DeviceExtensions
     
     public static void StoreValuesInStorage(this ISimuDevice device)
     {
-        if(!_deviceData.TryGetValue(device.Id, out Dictionary<string,object?> data))
+        if(!_deviceData.TryGetValue(device.Id, out var data))
             return;
         
         foreach (var fieldInfo in device.GetDeviceFields())
@@ -67,30 +65,30 @@ public static class DeviceExtensions
         return device;
     }
     
-    public static ISimuDevice? GetDevice(this IServiceProvider serviceProvider, Type type)
+    public static ISimuDevice GetDevice(this IServiceProvider serviceProvider, Type type)
     {
         var device = serviceProvider.GetServices<ISimuDevice>().First(t => t.GetType() == type);;
+        ArgumentNullException.ThrowIfNull(device);
         return device;
     }
     
+    
     public static ISimuDevice? GetDevice(this IServiceProvider serviceProvider, int id, string name)
     {
-        if (!_deviceData.TryGetValue(id, out Dictionary<string, object> data))
+        if (!_deviceData.TryGetValue(id, out var data))
         {
-            data = GetOrCreateDeviceData(id);
+            data = GetOrCreateDeviceData(id); 
+            ArgumentNullException.ThrowIfNull(data);
 
-            foreach (var service in serviceProvider.GetServices<ISimuDevice>())
+            if (serviceProvider.GetServices<ISimuDevice>().Any(service => DeviceCanHandle(service, id, name, data)))
             {
-                if(DeviceCanHandle(service, id, name, data))
-                    break;
+                return serviceProvider.GetDevice(data);
             }
         }
-        
-
-        return serviceProvider.GetDevice(data);
+        return null;
     }
     
-    private static bool DeviceCanHandle(this ISimuDevice device, int id, string name, Dictionary<string, object> data)
+    private static bool DeviceCanHandle(this ISimuDevice device, int id, string name, IDictionary<string, object?> data)
     {
         if (data == null) return false;
         
@@ -98,7 +96,7 @@ public static class DeviceExtensions
             return true;
 
 
-        var tempData = new Dictionary<string, object>()
+        var tempData = new Dictionary<string, object?>()
         {
             {key_id, id},
             {key_name, name}
@@ -139,7 +137,7 @@ public static class DeviceExtensions
         return null;
     }
     
-    public static IEnumerable<ISimuDevice?> GetDevices(this IServiceProvider serviceProvider)
+    public static IEnumerable<ISimuDevice> GetDevices(this IServiceProvider serviceProvider)
     {
         foreach (var data in _deviceData.Values)
         {

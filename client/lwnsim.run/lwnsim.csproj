@@ -11,6 +11,7 @@
     <PackageReference Include="Jurassic" Version="3.2.6" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
+    <PackageReference Include="ModbusRx" Version="0.8.0" />
     <PackageReference Include="SocketIOClient" Version="2.3.1" />
     <PackageReference Include="Websocket.Client" Version="4.4.43" />
   </ItemGroup>

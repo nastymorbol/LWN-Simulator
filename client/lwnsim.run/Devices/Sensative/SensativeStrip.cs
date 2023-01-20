@@ -1,6 +1,4 @@
-using lwnsim.Devices.Interfaces;
 using lwnsim.Poco.Socket.Io;
-using Microsoft.Extensions.Logging;
 
 namespace lwnsim.Devices.Sensative;
 
@@ -8,14 +6,16 @@ public sealed class SensativeStrip : SimDeviceBase, IEncoder
 {
     private readonly ILogger<SensativeStrip> _logger;
     private readonly LwnConnectionService _connectionService;
+    private readonly ModbusClientService _modbusClientService;
     private readonly Random _random = new (DateTime.Now.Millisecond);
 
     private SensativePayload _instance = new ();
     
-    public SensativeStrip(ILogger<SensativeStrip> logger, LwnConnectionService connectionService)
+    public SensativeStrip(ILogger<SensativeStrip> logger, LwnConnectionService connectionService, ModbusClientService modbusClientService)
     {
         _logger = logger;
         _connectionService = connectionService;
+        _modbusClientService = modbusClientService;
 
         //var engine = JavaScriptEngineSwitcher.Core.JsEngineSwitcher.Current.CreateDefaultEngine();
         //engine.ExecuteFile("./JsDecoder/strips-ttn-decoder.js");

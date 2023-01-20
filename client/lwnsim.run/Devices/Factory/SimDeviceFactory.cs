@@ -1,11 +1,6 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using lwnsim.Devices.Extensions;
-using lwnsim.Devices.Interfaces;
 using lwnsim.Poco.Http;
 using lwnsim.Poco.Socket.Io;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace lwnsim.Devices.Factory;
 
@@ -41,7 +36,6 @@ public class SimDeviceFactory
 
     public async Task ProcessAsync(LwnDeviceResponse deviceResponse)
     {
-        // Device not handled yet
         var device = _serviceProvider.GetDevice(deviceResponse.id, deviceResponse.Info.Name);
         if (device == null) return;
 
