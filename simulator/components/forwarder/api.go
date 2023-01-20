@@ -1,6 +1,9 @@
 package forwarder
 
 import (
+	"fmt"
+	"log"
+
 	dl "github.com/arslab/lwnsimulator/simulator/components/device/frames/downlink"
 	m "github.com/arslab/lwnsimulator/simulator/components/forwarder/models"
 	"github.com/arslab/lwnsimulator/simulator/resources/communication/buffer"
@@ -26,6 +29,9 @@ func (f *Forwarder) AddDevice(d m.InfoDevice) {
 	f.Mutex.Lock()
 	defer f.Mutex.Unlock()
 
+	foundGatewayInRange := false
+	messageLog := ""
+
 	f.Devices[d.DevEUI] = d
 
 	inner := make(map[lorawan.EUI64]*buffer.BufferUplink)
@@ -34,11 +40,15 @@ func (f *Forwarder) AddDevice(d m.InfoDevice) {
 	for _, g := range f.Gateways {
 
 		if inRange(d, g) {
+			foundGatewayInRange = true
 			f.DevToGw[d.DevEUI][g.MACAddress] = g.Buffer
 		}
-
 	}
 
+	if !foundGatewayInRange {
+		messageLog = fmt.Sprintf("[SIM] [ERROR]: no Gateway found in Range of DevEui: %s", d.DevEUI.String())
+		log.Println(messageLog)
+	}
 }
 
 func (f *Forwarder) AddGateway(g m.InfoGateway) {
