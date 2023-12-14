@@ -33,10 +33,12 @@ func (d *Device) ProcessDownlink(phy lorawan.PHYPayload) (*dl.InformationDownlin
 		payload, fcnt, err = dl.GetDownlink(phy, d.Info.Configuration.DisableFCntDown, d.Info.Status.FCntDown,
 			d.Info.NwkSKey, d.Info.AppSKey)
 
-		if err != nil {
-			//d.Print("Downlink Error: ", err, util.PrintBoth)
-			//return nil, err
+		if d.Info.Status.FCntDown != fcnt {
 			d.Info.Status.FCntDown = fcnt
+			err = nil
+		} else if err != nil {
+			//d.Print("Downlink Error: ", err, util.PrintBoth)
+			return nil, err
 		}
 
 		d.Info.Status.FCntDown = (d.Info.Status.FCntDown + 1) % util.MAXFCNTGAP
@@ -45,7 +47,7 @@ func (d *Device) ProcessDownlink(phy lorawan.PHYPayload) (*dl.InformationDownlin
 			d.SendAck()
 		}
 
-		if payload.DataPayload != nil {
+		if payload != nil && payload.DataPayload != nil {
 			d.PrintDownlink(payload.FPort, payload.DataPayload)
 		}
 	}
