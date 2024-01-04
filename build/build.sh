@@ -27,5 +27,5 @@ ssh root@$HOST "mkdir -p /opt/$NAME"
 scp ./$NAME/${NAME}_x64 root@$HOST:/opt/$NAME/${NAME}_x64
 scp ./config.json root@$HOST:/opt/$NAME/config.json
 
-
+exit 0;
 ssh root@$HOST "systemctl daemon-reload; systemctl enable $NAME.service; systemctl start $NAME.service; systemctl status $NAME.service"

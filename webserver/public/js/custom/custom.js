@@ -2261,8 +2261,8 @@ function LoadDevice(dev){
     $("[name=input-fcnt]").val(dev.info.status.infoUplink.fcnt);
     $("#datarate-uplink").val(dev.info.configuration.dataRate);
 
-    $("[name=input-validate-counter]").prop("checked",dev.info.configuration.disablefcntDown);  
-    if (!dev.info.configuration.disablefcntDown)
+    $("[name=input-validate-counter]").prop("checked",dev.info.configuration.disableFCntDown);  
+    if (!dev.info.configuration.disableFCntDown)
         $("[name=input-fcnt-downlink]").val(dev.info.status.fcntDown);
 
     //features
@@ -2443,7 +2443,7 @@ function Click_SaveDevice(){
     var fport = $("[name=input-fport]");
     var retransmission = $("[name=input-retransmission]")
     var Fcnt = $("[name=input-fcnt]");
-    var disablefcntDown = $("[name=input-validate-counter]").prop("checked");
+    var disableFCntDown = $("[name=input-validate-counter]").prop("checked");
     var fcntDown = $("[name=input-fcnt-downlink]");
 
     var validFport = false;
@@ -2459,7 +2459,7 @@ function Click_SaveDevice(){
         validFcnt = IsValidNumber(Fcnt.val(),-1,MaxValueCounter+1);
     
     var validFcntDown = true;
-    if(!disablefcntDown){
+    if(!disableFCntDown){
     
         if(fcntDown.val() == "")
             validFcntDown = false;
@@ -2579,7 +2579,7 @@ function Click_SaveDevice(){
                 "supportedClassC":isClassCactive,
                 "range":Number(range.val()),
                 "dataRate": Number(datarate.val()),
-                "disableFCntDown":disablefcntDown,
+                "disableFCntDown":disableFCntDown,
                 "sendInterval":Number(upInterval.val()),
                 "nbRetransmission":Number(retransmission.val()),
             },
