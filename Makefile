@@ -30,9 +30,13 @@ build-x64:
 build-x86:
 	@make build-platform GOOS=linux GOARCH=386 SUFFIX="_x86"
 
+build-darwin:
+	@make build-platform GOOS=darwin GOARCH=amd64 SUFFIX="_osx"
+
 build-all:
 	@make build-x64
 	@make build-x86
+	@make build-darwin
 run:
 	@go run cmd/main.go
 
