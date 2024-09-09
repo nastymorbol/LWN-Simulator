@@ -24,6 +24,9 @@ build-platform:
 	@go build -o bin/lwnsimulator${SUFFIX} cmd/main.go
 	@echo -e "\e[92mBuild Complete\e[39m"
 
+build-win-x64:
+	@make build-platform GOOS=windows GOARCH=amd64 SUFFIX="_win_x64"
+
 build-x64:
 	@make build-platform GOOS=linux GOARCH=amd64 SUFFIX="_x64"
 
@@ -37,6 +40,8 @@ build-all:
 	@make build-x64
 	@make build-x86
 	@make build-darwin
+	@make build-win-x64
+
 run:
 	@go run cmd/main.go
 
